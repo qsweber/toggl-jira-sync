@@ -51,7 +51,7 @@ def get_toggl_time_entries(config, params={}):
 
     return [
         _TogglTimeEntry(
-            jira_issue_id=_jira_issue_id_for_time_entry(entry),
+            jira_issue_id=_get_jira_issue_id(entry['description']),
             user=entry['user'],
             seconds=entry['dur'] / float(1000),
         )
@@ -60,10 +60,10 @@ def get_toggl_time_entries(config, params={}):
     ]
 
 
-def _jira_issue_id_for_time_entry(entry):
+def _get_jira_issue_id(string):
     issue_id_regex = r'[A-Za-z]+-\d+'
 
-    match = search(issue_id_regex, entry['description'])
+    match = search(issue_id_regex, string)
     if match:
         return match.group(0).lower()
     else:

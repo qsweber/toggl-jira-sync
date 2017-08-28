@@ -4,14 +4,14 @@ import toggl_jira_sync.main as module
 
 
 @pytest.mark.parametrize(
-    'toggl_time_entries,jira_worklogs,delete_worklog_calls,add_worklog_calls',
+    'toggl_time_entries,jira_worklogs,delete_worklog_called,add_worklog_calls',
     [
         (
             [
                 {'user': 'foo', 'seconds': 101},
             ],
             [],
-            None,
+            False,
             (None, 'abc-1', 101, '--- FROM TOGGL --\n\nfoo: 1.7 minutes'),
         ),
         (
@@ -21,15 +21,34 @@ import toggl_jira_sync.main as module
             [
                 {'user': 'toggl', 'seconds': 101},
             ],
+            False,
             None,
-            None,
+        ),
+        (
+            [
+                {'user': 'foo', 'seconds': 101},
+                {'user': 'bar', 'seconds': 120},
+            ],
+            [],
+            False,
+            (None, 'abc-1', 221, '--- FROM TOGGL --\n\nbar: 2.0 minutes \nfoo: 1.7 minutes'),
+        ),
+        (
+            [
+                {'user': 'foo', 'seconds': 500},
+            ],
+            [
+                {'user': 'toggl', 'seconds': 50},
+            ],
+            True,
+            (None, 'abc-1', 500, '--- FROM TOGGL --\n\nfoo: 8.3 minutes'),
         ),
     ]
 )
 def test_sync_toggl_with_jira(
     toggl_time_entries,
     jira_worklogs,
-    delete_worklog_calls,
+    delete_worklog_called,
     add_worklog_calls,
     mocker,
 ):
@@ -65,6 +84,8 @@ def test_sync_toggl_with_jira(
             mocker.Mock(
                 user=entry['user'],
                 seconds=entry['seconds'],
+                jira_issue_id='abc-1',
+                worklog_id=1000,
             )
             for entry in jira_worklogs
         ]
@@ -79,8 +100,8 @@ def test_sync_toggl_with_jira(
         None,
     )
 
-    if delete_worklog_calls:
-        mocked_delete_worklog.assert_called_with(*delete_worklog_calls)
+    if delete_worklog_called:
+        assert mocked_delete_worklog.called
     else:
         mocked_delete_worklog.assert_not_called()
 

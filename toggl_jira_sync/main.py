@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 import logging
+import operator
 
 from toggl_jira_sync.jira import (
     connect_to_jira,
@@ -35,9 +36,15 @@ def _get_comment(config, toggl_entries):
     for entry in toggl_entries:
         seconds_by_dev[entry.user] += float(entry.seconds)
 
+    seconds_by_dev = sorted(
+        seconds_by_dev.items(),
+        reverse=True,
+        key=operator.itemgetter(1),
+    )
+
     return config.jira_comment_prefix + '\n\n' + ' minutes \n'.join([
         '{}: {}'.format(user, round(float(seconds) / 60, 1))
-        for user, seconds in seconds_by_dev.items()
+        for user, seconds in seconds_by_dev
     ]) + ' minutes'
 
 
