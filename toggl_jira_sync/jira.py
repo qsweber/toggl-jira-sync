@@ -17,7 +17,12 @@ _JiraWorklog = NamedTuple(
 def get_jira_worklogs(jira_client, jira_issue_id):
     issue_jira = jira_client.issue(jira_issue_id)
 
-    jira_issue_id_new = issue_jira.key.encode('ascii', 'ignore').lower()
+    jira_issue_id_new = (
+        issue_jira.key
+        .encode('ascii', 'ignore')
+        .decode()
+        .lower()
+    )
     if jira_issue_id_new != jira_issue_id:
         raise Exception('a ticket re-naming has happened')
 
@@ -39,7 +44,7 @@ def delete_worklog(jira_client, jira_worklog):
         jira_worklog.worklog_id,
     ))
 
-    r = jira_client._session.delete(url)
+    jira_client._session.delete(url)
 
     return True
 

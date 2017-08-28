@@ -21,7 +21,9 @@ _TogglTimeEntry = NamedTuple(
 
 
 def get_toggl_time_entries(config, params={}):
-    one_year_ago = (datetime.now().date() - timedelta(days=365)).strftime('%Y-%m-%d')
+    one_year_ago = (
+        datetime.now().date() - timedelta(days=365)
+    ).strftime('%Y-%m-%d')
 
     default_params = {
         'user_agent': config.toggl_username,
