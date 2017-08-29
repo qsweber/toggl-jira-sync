@@ -5,11 +5,12 @@ import logging
 import logging.config
 import operator
 
-from jira.utils import JIRAError
+from jira.exceptions import JIRAError
 
 from toggl_jira_sync.jira import (
     connect_to_jira,
     get_jira_worklogs,
+    get_ticket_id_history,
     delete_worklog,
     add_worklog,
 )
@@ -56,40 +57,69 @@ def _get_comment(config, toggl_entries):
     ]) + ' minutes'
 
 
-def _sync_toggl_with_jira(config, jira_issue_id, jira_client, dry_run=False):
-    toggl_entries = get_toggl_time_entries(
-        config,
-        {'description': jira_issue_id.lower()}
-    )
+def _get_toggl_time_entries_for_issue(config, jira_issue_id, jira_client):
+    return [
+        entry
+        for _jira_issue_id in get_ticket_id_history(jira_client, jira_issue_id)
+        for entry in get_toggl_time_entries(
+            config,
+            {'description': _jira_issue_id.lower()}
+        )
+    ]
 
+
+def _delete_existing_sync_worklogs(
+    config,
+    jira_worklogs,
+    jira_client,
+    dry_run,
+):
+    remaining_worklogs = []
+
+    for worklog in jira_worklogs:
+        if worklog.user == config.jira_username:
+            logger.info('delete_worklog, {} - {}'.format(
+                worklog.jira_issue_id,
+                worklog.worklog_id,
+            ))
+            if not dry_run:
+                delete_worklog(jira_client, worklog)
+        else:
+            remaining_worklogs.append(worklog)
+
+    return remaining_worklogs
+
+
+def _sync_toggl_with_jira(config, jira_issue_id, jira_client, dry_run=False):
     try:
         jira_worklogs = get_jira_worklogs(jira_client, jira_issue_id)
     except JIRAError:
         logger.info('jira_issue_id {} does not exist in JIRA'.format(jira_issue_id))
+
         return False
 
+    toggl_entries = _get_toggl_time_entries_for_issue(
+        config,
+        jira_issue_id,
+        jira_client,
+    )
+
     toggl_total = sum([entry.seconds for entry in toggl_entries])
-    jira_total = sum([entry.seconds for entry in jira_worklogs])
+    jira_total = sum([worklog.seconds for worklog in jira_worklogs])
 
     if abs(toggl_total - jira_total) < 60:
         logger.info('already_synced, {}'.format(jira_issue_id))
+
         return True
 
-    jira_worklogs_toggl_user = [
-        jira_worklog
-        for jira_worklog in jira_worklogs
-        if jira_worklog.user == config.jira_username
-    ]
+    remaining_worklogs = _delete_existing_sync_worklogs(
+        config,
+        jira_worklogs,
+        jira_client,
+        dry_run,
+    )
 
-    for worklog in jira_worklogs_toggl_user:
-        logger.info('delete_worklog, {} - {}'.format(
-            worklog.jira_issue_id,
-            worklog.worklog_id,
-        ))
-        if not dry_run:
-            delete_worklog(jira_client, worklog)
-
-        jira_total -= worklog.seconds
+    jira_total = sum([worklog.seconds for worklog in remaining_worklogs])
 
     seconds = toggl_total - jira_total
 
@@ -101,15 +131,26 @@ def _sync_toggl_with_jira(config, jira_issue_id, jira_client, dry_run=False):
     logger.info('add_worklog, {} - {} - {}'.format(
         jira_issue_id,
         seconds,
-        comment,
+        comment.replace('\n', ' '),
     ))
     if not dry_run:
-        add_worklog(
-            jira_client,
-            jira_issue_id,
-            seconds,
-            comment,
-        )
+        try:
+            add_worklog(
+                jira_client,
+                jira_issue_id,
+                seconds,
+                comment,
+            )
+        except JIRAError as e:
+            if 'non-editable' in e.text:
+                logger.info('jira_issue_id {}: {}'.format(
+                    jira_issue_id,
+                    e.text,
+                ))
+
+                return False
+            else:
+                raise e
 
     return True
 
@@ -119,7 +160,10 @@ def main(lookback_days, dry_run):
 
     jira_client = connect_to_jira(config)
 
-    for jira_issue_id in _get_jira_issue_ids_to_sync(config, lookback_days):
+    for jira_issue_id in _get_jira_issue_ids_to_sync(
+        config,
+        lookback_days,
+    ):
         _sync_toggl_with_jira(config, jira_issue_id, jira_client, dry_run)
 
 

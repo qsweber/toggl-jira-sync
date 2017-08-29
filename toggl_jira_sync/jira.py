@@ -14,18 +14,33 @@ _JiraWorklog = NamedTuple(
 )
 
 
-def get_jira_worklogs(jira_client, jira_issue_id):
-    issue_jira = jira_client.issue(jira_issue_id)
-
-    jira_issue_id_new = (
-        issue_jira.key
+def _get_jira_issue_id(jira_issue):
+    return (
+        jira_issue.key
         .encode('ascii', 'ignore')
         .decode()
         .lower()
     )
-    if jira_issue_id_new != jira_issue_id:
-        raise Exception('a ticket re-naming has happened')
 
+
+def get_ticket_id_history(jira_client, jira_issue_id):
+    jira_issue = jira_client.issue(jira_issue_id, expand='changelog')
+
+    jira_issue_id_current = _get_jira_issue_id(jira_issue)
+
+    jira_issue_id_history = []
+
+    for history in jira_issue.changelog.histories:
+        for item in history.items:
+            if item.field == 'Key':
+                jira_issue_id_history.append(item.fromString.lower())
+
+    jira_issue_id_history.append(jira_issue_id_current)
+
+    return jira_issue_id_history
+
+
+def get_jira_worklogs(jira_client, jira_issue_id):
     return [
         _JiraWorklog(
             jira_issue_id,

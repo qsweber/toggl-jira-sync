@@ -1,2 +1,2 @@
 requests>=2<3
-jira==0.50
+jira>=1<2

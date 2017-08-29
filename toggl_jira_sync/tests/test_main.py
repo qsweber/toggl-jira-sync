@@ -91,6 +91,12 @@ def test_sync_toggl_with_jira(
         ]
     )
 
+    mocker.patch.object(
+        module,
+        'get_ticket_id_history',
+        return_value=['abc-1'],
+    )
+
     module._sync_toggl_with_jira(
         mocker.Mock(
             jira_comment_prefix='--- FROM TOGGL --',
