@@ -110,3 +110,52 @@ def test_sync_toggl_with_jira(
         mocked_add_worklog.assert_called_with(*add_worklog_calls)
     else:
         mocked_add_worklog.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    'toggl_time_entries,jira_comment_prefix,expected',
+    [
+        (
+            [
+                {'user': 'foo', 'seconds': 100},
+                {'user': 'bar', 'seconds': 120},
+            ],
+            '--- FROM TOGGL ---',
+            '--- FROM TOGGL ---\n\nbar: 2.0 minutes \nfoo: 1.7 minutes',
+        ),
+        (
+            [
+                {'user': 'bar', 'seconds': 120},
+                {'user': 'foo', 'seconds': 100},
+            ],
+            '--- FROM TOGGL ---',
+            '--- FROM TOGGL ---\n\nbar: 2.0 minutes \nfoo: 1.7 minutes',
+        ),
+        (
+            [
+                {'user': 'bar', 'seconds': 120},
+                {'user': 'foo', 'seconds': 100},
+            ],
+            '--- TEST ---',
+            '--- TEST ---\n\nbar: 2.0 minutes \nfoo: 1.7 minutes',
+        ),
+    ],
+)
+def test_get_comment(
+    toggl_time_entries,
+    jira_comment_prefix,
+    expected,
+    mocker,
+):
+    actual = module._get_comment(
+        mocker.Mock(jira_comment_prefix=jira_comment_prefix),
+        [
+            mocker.Mock(
+                user=entry['user'],
+                seconds=entry['seconds'],
+            )
+            for entry in toggl_time_entries
+        ]
+    )
+
+    assert actual == expected

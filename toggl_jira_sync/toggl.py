@@ -50,9 +50,9 @@ def get_toggl_time_entries(config, params={}):
         sleep(1)
 
     unique_users = set([entry['user'] for entry in entries_total])
-    new_users = unique_users - set(config.dev_list) - set(config.non_dev_list)
+    new_users = unique_users - set(config.include_users_list) - set(config.exclude_users_list)
     if new_users:
-        raise Exception('add the following users to either the JTS_DEV_LIST or JTS_NON_DEV_LIST: {}'.format(
+        raise Exception('add the following users to either the JTS_INCLUDE_USERS or JTS_EXCLUDE_USERS: {}'.format(
             ', '.join(new_users)
         ))
 
@@ -63,7 +63,7 @@ def get_toggl_time_entries(config, params={}):
             seconds=entry['dur'] / float(1000),
         )
         for entry in entries_total
-        if entry['user'] in config.dev_list
+        if entry['user'] in config.include_users_list
     ]
 
 
