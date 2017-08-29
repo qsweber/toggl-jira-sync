@@ -1,12 +1,15 @@
-from setuptools import setup
+from distutils.core import setup
 
 setup(
-    name='toggl-jira-sync',
+    name='toggl_jira_sync',
+    packages=['toggl_jira_sync'],
     description='Sync Toggl with JIRA',
-    version='0.0.1',
+    version='0.0.2',
     author='Quinn Weber',
     maintainer='Quinn Weber',
     maintainer_email='quinn@quinnweber.com',
+    url='https://github.com/qsweber/toggl-jira-sync',
+    download_url='https://github.com/qsweber/toggl-jira-sync/archive/v0.0.2.zip',
     install_requires=(
         'requests',
         'python-dateutil',
