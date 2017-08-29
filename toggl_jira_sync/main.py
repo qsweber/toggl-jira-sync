@@ -134,5 +134,7 @@ def cli():
 
     dry_run = cli_args['dry_run']
     lookback_days = cli_args['lookback_days']
+    if lookback_days:
+        lookback_days = int(lookback_days)
 
     main(lookback_days, dry_run)
