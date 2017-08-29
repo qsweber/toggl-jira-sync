@@ -49,6 +49,13 @@ def get_toggl_time_entries(config, params={}):
         default_params['page'] += 1
         sleep(1)
 
+    unique_users = set([entry['user'] for entry in entries_total])
+    new_users = unique_users - set(config.dev_list) - set(config.non_dev_list)
+    if new_users:
+        raise Exception('add the following users to either the JTS_DEV_LIST or JTS_NON_DEV_LIST: {}'.format(
+            ', '.join(new_users)
+        ))
+
     return [
         _TogglTimeEntry(
             jira_issue_id=_get_jira_issue_id(entry['description']),

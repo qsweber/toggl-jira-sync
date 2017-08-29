@@ -12,6 +12,7 @@ _TogglJiraSyncConfig = namedtuple(
         'toggl_api_key',
         'toggl_wid',
         'dev_list',
+        'non_dev_list',
         'jira_comment_prefix',
     ]
 )
@@ -26,5 +27,6 @@ def get_config():
         toggl_api_key=os.environ['JTS_TOGGL_API_KEY'],
         toggl_wid=os.environ['JTS_TOGGL_WID'],
         dev_list=os.environ['JTS_DEV_LIST'].split(','),
+        non_dev_list=os.environ['JTS_NON_DEV_LIST'].split(','),
         jira_comment_prefix=os.environ['JTS_JIRA_COMMENT_PREFIX'],
     )

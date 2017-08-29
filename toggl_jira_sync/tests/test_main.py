@@ -98,6 +98,7 @@ def test_sync_toggl_with_jira(
         ),
         'abc-1',
         None,
+        dry_run=False,
     )
 
     if delete_worklog_called:

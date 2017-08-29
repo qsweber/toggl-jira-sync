@@ -12,4 +12,9 @@ setup(
         'python-dateutil',
         'jira',
     ),
+    entry_points={
+        'console_scripts': (
+            'run-toggl-jira-sync = toggl_jira_sync.main:cli',
+        ),
+    },
 )
