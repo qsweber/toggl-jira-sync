@@ -4,7 +4,7 @@ setup(
     name='toggl-jira-sync',
     packages=['toggl_jira_sync'],
     description='Sync Toggl with JIRA',
-    version='0.0.4',
+    version='0.0.5',
     author='Quinn Weber',
     author_email='quinn@quinnweber.com',
     maintainer='Quinn Weber',
@@ -14,6 +14,7 @@ setup(
         'requests',
         'python-dateutil',
         'jira',
+        'typing',
     ),
     entry_points={
         'console_scripts': (
