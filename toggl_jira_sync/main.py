@@ -18,8 +18,7 @@ from toggl_jira_sync.load_config import get_config
 from toggl_jira_sync.toggl import get_toggl_time_entries
 
 
-logger = logging.getLogger('toggl_jira_sync')
-logging.config.fileConfig('logging.ini')
+logger = logging.getLogger(__name__)
 
 
 def _get_jira_issue_ids_to_sync(config, lookback_days):
@@ -78,10 +77,6 @@ def _delete_existing_sync_worklogs(
 
     for worklog in jira_worklogs:
         if worklog.user == config.jira_username:
-            logger.info('delete_worklog, {} - {}'.format(
-                worklog.jira_issue_id,
-                worklog.worklog_id,
-            ))
             if not dry_run:
                 delete_worklog(jira_client, worklog)
         else:
@@ -124,15 +119,14 @@ def _sync_toggl_with_jira(config, jira_issue_id, jira_client, dry_run=False):
     seconds = toggl_total - jira_total
 
     if seconds < 0:
-        raise Exception('does not support negative times')
+        logger.warning('{} has more time tracked in JIRA than in Toggl'.format(
+            jira_issue_id,
+        ))
+
+        return False
 
     comment = _get_comment(config, toggl_entries)
 
-    logger.info('add_worklog, {} - {} - {}'.format(
-        jira_issue_id,
-        seconds,
-        comment.replace('\n', ' '),
-    ))
     if not dry_run:
         try:
             add_worklog(
@@ -147,10 +141,10 @@ def _sync_toggl_with_jira(config, jira_issue_id, jira_client, dry_run=False):
                     jira_issue_id,
                     e.text,
                 ))
-
-                return False
             else:
-                raise e
+                logger.warning(e.text)
+
+            return False
 
     return True
 

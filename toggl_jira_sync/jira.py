@@ -1,5 +1,10 @@
+import logging
+
 from jira.client import GreenHopper
 from typing import NamedTuple
+
+
+logger = logging.getLogger(__name__)
 
 
 _JiraWorklog = NamedTuple(
@@ -54,6 +59,10 @@ def get_jira_worklogs(jira_client, jira_issue_id):
 
 
 def delete_worklog(jira_client, jira_worklog):
+    logger.info('delete_worklog, {} - {}'.format(
+        jira_worklog.jira_issue_id,
+        jira_worklog.worklog_id,
+    ))
     url = jira_client._get_url('issue/{0}/worklog/{1}'.format(
         jira_worklog.jira_issue_id,
         jira_worklog.worklog_id,
@@ -65,6 +74,12 @@ def delete_worklog(jira_client, jira_worklog):
 
 
 def add_worklog(jira_client, jira_issue_id, seconds, comment):
+    logger.info('add_worklog, {} - {} - {}'.format(
+        jira_issue_id,
+        seconds,
+        comment.replace('\n', ' '),
+    ))
+
     jira_client.add_worklog(
         issue=jira_issue_id,
         timeSpentSeconds=max(60, seconds),
